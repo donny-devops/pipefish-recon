@@ -1,0 +1,6 @@
+/target
+**/target
+Cargo.lock
+audit_log.jsonl
+node_modules
+.DS_Store
