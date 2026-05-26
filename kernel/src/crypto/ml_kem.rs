@@ -80,3 +80,68 @@ pub fn decapsulate(sk: &SecretKey, ct: &Ciphertext) -> Result<SharedSecret> {
 pub fn decapsulate(_sk: &SecretKey, _ct: &Ciphertext) -> Result<SharedSecret> {
     Ok(SharedSecret(Vec::new()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_returns_ok() {
+        let kp = MlKemKeyPair::generate();
+        assert!(kp.is_ok());
+    }
+
+    #[cfg(not(feature = "pq-crypto"))]
+    #[test]
+    fn stub_generate_returns_empty_keys() {
+        let kp = MlKemKeyPair::generate().unwrap();
+        assert!(kp.public.0.is_empty());
+        assert!(kp.secret.0.is_empty());
+    }
+
+    #[cfg(not(feature = "pq-crypto"))]
+    #[test]
+    fn stub_encapsulate_returns_empty_ct_and_ss() {
+        let kp = MlKemKeyPair::generate().unwrap();
+        let (ct, ss) = encapsulate(&kp.public).unwrap();
+        assert!(ct.0.is_empty());
+        assert!(ss.0.is_empty());
+    }
+
+    #[cfg(not(feature = "pq-crypto"))]
+    #[test]
+    fn stub_decapsulate_returns_empty_ss() {
+        let kp = MlKemKeyPair::generate().unwrap();
+        let (ct, _) = encapsulate(&kp.public).unwrap();
+        let ss = decapsulate(&kp.secret, &ct).unwrap();
+        assert!(ss.0.is_empty());
+    }
+
+    #[test]
+    fn public_key_clones() {
+        let pk = PublicKey(vec![1, 2, 3]);
+        let pk2 = pk.clone();
+        assert_eq!(pk.0, pk2.0);
+    }
+
+    #[test]
+    fn secret_key_clones() {
+        let sk = SecretKey(vec![4, 5, 6]);
+        let sk2 = sk.clone();
+        assert_eq!(sk.0, sk2.0);
+    }
+
+    #[test]
+    fn ciphertext_clones() {
+        let ct = Ciphertext(vec![7, 8]);
+        let ct2 = ct.clone();
+        assert_eq!(ct.0, ct2.0);
+    }
+
+    #[test]
+    fn shared_secret_clones() {
+        let ss = SharedSecret(vec![9]);
+        let ss2 = ss.clone();
+        assert_eq!(ss.0, ss2.0);
+    }
+}

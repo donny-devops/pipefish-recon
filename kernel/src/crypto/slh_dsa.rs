@@ -79,3 +79,68 @@ pub fn verify(pk: &PublicKey, msg: &[u8], signature: &Signature) -> Result<bool>
 pub fn verify(_pk: &PublicKey, _msg: &[u8], _signature: &Signature) -> Result<bool> {
     Ok(true)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_returns_ok() {
+        let kp = SlhDsaKeyPair::generate();
+        assert!(kp.is_ok());
+    }
+
+    #[cfg(not(feature = "pq-crypto"))]
+    #[test]
+    fn stub_generate_returns_empty_keys() {
+        let kp = SlhDsaKeyPair::generate().unwrap();
+        assert!(kp.public.0.is_empty());
+        assert!(kp.secret.0.is_empty());
+    }
+
+    #[cfg(not(feature = "pq-crypto"))]
+    #[test]
+    fn stub_sign_returns_empty_signature() {
+        let kp = SlhDsaKeyPair::generate().unwrap();
+        let sig = sign(&kp.secret, b"hello world").unwrap();
+        assert!(sig.0.is_empty());
+    }
+
+    #[cfg(not(feature = "pq-crypto"))]
+    #[test]
+    fn stub_verify_always_returns_true() {
+        let kp = SlhDsaKeyPair::generate().unwrap();
+        let sig = sign(&kp.secret, b"test message").unwrap();
+        assert!(verify(&kp.public, b"test message", &sig).unwrap());
+    }
+
+    #[cfg(not(feature = "pq-crypto"))]
+    #[test]
+    fn stub_verify_returns_true_for_wrong_message() {
+        // The stub ignores all arguments and always returns true
+        let kp = SlhDsaKeyPair::generate().unwrap();
+        let sig = sign(&kp.secret, b"original").unwrap();
+        assert!(verify(&kp.public, b"different", &sig).unwrap());
+    }
+
+    #[test]
+    fn public_key_clones() {
+        let pk = PublicKey(vec![1, 2]);
+        let pk2 = pk.clone();
+        assert_eq!(pk.0, pk2.0);
+    }
+
+    #[test]
+    fn secret_key_clones() {
+        let sk = SecretKey(vec![3, 4]);
+        let sk2 = sk.clone();
+        assert_eq!(sk.0, sk2.0);
+    }
+
+    #[test]
+    fn signature_clones() {
+        let sig = Signature(vec![5, 6]);
+        let sig2 = sig.clone();
+        assert_eq!(sig.0, sig2.0);
+    }
+}

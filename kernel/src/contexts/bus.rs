@@ -42,3 +42,43 @@ impl BusContext {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::events::{BusEvent, CommitType, ContextId, ContextScope};
+
+    #[tokio::test]
+    async fn bus_drains_all_sent_events_and_terminates() {
+        let (bus, tx) = BusContext::new();
+
+        // Send three events then drop the sender so the bus loop exits
+        let events: Vec<BusEvent> = (0..3)
+            .map(|i| {
+                BusEvent::new(
+                    ContextId::Core,
+                    CommitType::Chore,
+                    ContextScope::Core,
+                    format!("event {i}"),
+                )
+            })
+            .collect();
+
+        for evt in events {
+            tx.send(evt).await.expect("send should succeed");
+        }
+        // Drop tx so the receiver loop ends
+        drop(tx);
+
+        // BusContext::run should terminate because the sender side is gone
+        let result = bus.run().await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn bus_terminates_immediately_when_no_events_sent() {
+        let (bus, tx) = BusContext::new();
+        drop(tx);
+        assert!(bus.run().await.is_ok());
+    }
+}

@@ -31,3 +31,25 @@ impl SkynetA4 {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::sync::mpsc;
+
+    #[tokio::test]
+    async fn run_sends_boot_event_to_bus() {
+        let (tx, mut rx) = mpsc::channel(8);
+        let agent = SkynetA4::new(tx);
+        agent.run().await.expect("run should succeed");
+        let evt = rx.recv().await.expect("expected a boot event");
+        assert!(evt.description.contains("SKYNET-A4"));
+    }
+
+    #[tokio::test]
+    async fn run_returns_ok() {
+        let (tx, _rx) = mpsc::channel(8);
+        let agent = SkynetA4::new(tx);
+        assert!(agent.run().await.is_ok());
+    }
+}
