@@ -35,8 +35,9 @@ async fn main() -> Result<()> {
     println!("SKYNET Agentic OS v0.1.0 — kernel online");
     info!("kernel boot sequence initiated");
 
-    let (bus, bus_tx) = BusContext::new();
-    let core = CoreContext::new(bus_tx.clone());
+    let keystore = CoreContext::boot_keystore()?;
+    let (bus, bus_tx) = BusContext::new(keystore.clone());
+    let core = CoreContext::new(bus_tx.clone(), keystore);
     let llm = LlmContext::new(bus_tx.clone());
     let tool = ToolContext::new(bus_tx.clone());
     let dx = DxContext::new(bus_tx.clone());

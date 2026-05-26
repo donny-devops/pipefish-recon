@@ -10,6 +10,7 @@ use tokio::sync::{mpsc, Mutex};
 use tokio::time::{interval, Duration};
 use tracing::info;
 
+use crate::crypto::envelope::KeyStore;
 use crate::events::{BusEvent, CommitType, ContextId, ContextScope};
 
 /// Opaque private-key handle. When the `pq-crypto` feature is enabled this
@@ -22,13 +23,29 @@ pub struct CoreContext {
     bus_tx: mpsc::Sender<BusEvent>,
     #[allow(dead_code)]
     signing_key: Arc<Mutex<Option<PrivateKeyHandle>>>,
+    #[allow(dead_code)]
+    keystore: Arc<KeyStore>,
 }
 
 impl CoreContext {
-    pub fn new(bus_tx: mpsc::Sender<BusEvent>) -> Self {
+    /// Generate the per-context ML-KEM-768 keystore. Returns the shared handle
+    /// so it can be wired into the bus before any context starts running.
+    pub fn boot_keystore() -> Result<Arc<KeyStore>> {
+        let store = KeyStore::generate()?;
+        let n = store.len();
+        let arc = Arc::new(store);
+        info!(
+            "feat(core): ML-KEM-768 KeyStore initialized — {} context keypairs generated",
+            n
+        );
+        Ok(arc)
+    }
+
+    pub fn new(bus_tx: mpsc::Sender<BusEvent>, keystore: Arc<KeyStore>) -> Self {
         Self {
             bus_tx,
             signing_key: Arc::new(Mutex::new(None)),
+            keystore,
         }
     }
 
