@@ -15,7 +15,9 @@ mod contexts;
 mod crypto;
 mod events;
 mod mcp;
+mod signals;
 
+use agents::skynet_a1::SkynetA1;
 use contexts::{
     bus::BusContext, core::CoreContext, dx::DxContext, llm::LlmContext, tool::ToolContext,
 };
@@ -40,6 +42,7 @@ async fn main() -> Result<()> {
     let llm = LlmContext::new(bus_tx.clone());
     let tool = ToolContext::new(bus_tx.clone());
     let dx = DxContext::new(bus_tx.clone());
+    let skynet_a1 = SkynetA1::new(bus_tx.clone());
 
     let shutdown = async {
         tokio::select! {
@@ -54,14 +57,15 @@ async fn main() -> Result<()> {
 
     tokio::select! {
         result = async {
-            let (core_r, bus_r, llm_r, tool_r, dx_r) = tokio::join!(
+            let (core_r, bus_r, llm_r, tool_r, dx_r, a1_r) = tokio::join!(
                 core.run(),
                 bus.run(),
                 llm.run(),
                 tool.run(),
                 dx.run(),
+                skynet_a1.run(),
             );
-            core_r?; bus_r?; llm_r?; tool_r?; dx_r?;
+            core_r?; bus_r?; llm_r?; tool_r?; dx_r?; a1_r?;
             Ok::<(), anyhow::Error>(())
         } => {
             result?;
