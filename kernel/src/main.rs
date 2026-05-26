@@ -6,10 +6,12 @@
 
 use anyhow::Result;
 use tokio::signal;
+use tokio::sync::mpsc;
 use tracing::{info, warn};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 mod agents;
+mod audit;
 mod commits;
 mod contexts;
 mod crypto;
@@ -35,11 +37,13 @@ async fn main() -> Result<()> {
     println!("SKYNET Agentic OS v0.1.0 — kernel online");
     info!("kernel boot sequence initiated");
 
-    let (bus, bus_tx) = BusContext::new();
+    let (dx_tx, dx_rx) = mpsc::channel::<events::BusEvent>(256);
+    let (bus, bus_tx) = BusContext::new(dx_tx);
     let core = CoreContext::new(bus_tx.clone());
     let llm = LlmContext::new(bus_tx.clone());
     let tool = ToolContext::new(bus_tx.clone());
-    let dx = DxContext::new(bus_tx.clone());
+    let mut dx = DxContext::new(dx_rx, bus_tx.clone())?;
+    drop(bus_tx);
 
     let shutdown = async {
         tokio::select! {
