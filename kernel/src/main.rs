@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! SKYNET Agentic OS — kernel entrypoint.
 //!
 //! Boots the five runtime contexts (core, bus, llm, tool, dx) concurrently
