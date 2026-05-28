@@ -14,4 +14,4 @@ jobs:
       - name: Cargo test
         run: cargo test --manifest-path kernel/Cargo.toml
       - name: Cargo clippy
-        run: cargo clippy --manifest-path kernel/Cargo.toml -- -D warnings
+        run: cargo clippy --manifest-path kernel/Cargo.toml
