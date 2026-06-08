@@ -3,7 +3,6 @@
 //! Every action emitted by any context becomes a `BusEvent`, which the `dx`
 //! context formats as a Conventional Commit string and appends to the audit
 //! log. The schema mirrors the Conventional Commits 1.0 vocabulary.
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -113,11 +112,13 @@ impl BusEvent {
         }
     }
 
+    #[allow(dead_code)]
     pub fn with_severity(mut self, severity: Severity) -> Self {
         self.severity = Some(severity);
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_payload(mut self, payload: serde_json::Value) -> Self {
         self.payload = Some(payload);
         self
@@ -136,7 +137,6 @@ impl BusEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn commit_string_matches_conventional_commits_format() {
         let evt = BusEvent::new(
