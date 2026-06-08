@@ -4,12 +4,14 @@
 
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Transport {
     Stdio,
     Sse,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ToolEntry {
     pub name: String,
