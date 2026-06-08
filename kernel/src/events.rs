@@ -3,7 +3,6 @@
 //! Every action emitted by any context becomes a `BusEvent`, which the `dx`
 //! context formats as a Conventional Commit string and appends to the audit
 //! log. The schema mirrors the Conventional Commits 1.0 vocabulary.
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -50,6 +49,7 @@ pub enum ContextScope {
     Llm,
     Tool,
     Dx,
+    Agent,
 }
 
 impl ContextScope {
@@ -60,10 +60,13 @@ impl ContextScope {
             ContextScope::Llm => "llm",
             ContextScope::Tool => "tool",
             ContextScope::Dx => "dx",
+            ContextScope::Agent => "agent",
         }
     }
 }
 
+/// Identifies the source of a [`BusEvent`]. Each agent gets its own variant
+/// so the audit log correctly attributes every emitted event.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ContextId {
     Core,
@@ -71,6 +74,11 @@ pub enum ContextId {
     Llm,
     Tool,
     Dx,
+    A1,
+    A2,
+    A3,
+    A4,
+    A5,
 }
 
 impl ContextId {
@@ -81,6 +89,11 @@ impl ContextId {
             ContextId::Llm => "llm",
             ContextId::Tool => "tool",
             ContextId::Dx => "dx",
+            ContextId::A1 => "skynet-a1",
+            ContextId::A2 => "skynet-a2",
+            ContextId::A3 => "skynet-a3",
+            ContextId::A4 => "skynet-a4",
+            ContextId::A5 => "skynet-a5",
         }
     }
 }
@@ -136,7 +149,6 @@ impl BusEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn commit_string_matches_conventional_commits_format() {
         let evt = BusEvent::new(
@@ -149,5 +161,11 @@ mod tests {
             evt.to_commit_string(),
             "feat(llm): routed threat signal to SKYNET-A3"
         );
+    }
+
+    #[test]
+    fn agent_context_ids_have_correct_str() {
+        assert_eq!(ContextId::A1.as_str(), "skynet-a1");
+        assert_eq!(ContextId::A5.as_str(), "skynet-a5");
     }
 }
