@@ -1,7 +1,6 @@
 //! Tool ACL policy — loaded from `tool_policy.toml` in production. The stub
 //! permits all (agent, tool) pairs but exposes the same surface so callers
 //! can be written against it now.
-
 use std::collections::HashMap;
 
 #[derive(Debug, Default, Clone)]
@@ -10,6 +9,7 @@ pub struct ToolPolicy {
 }
 
 impl ToolPolicy {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self::default()
     }
