@@ -4,6 +4,7 @@
 //! atop a single Tokio runtime, wires them together through an mpsc bus, and
 //! handles graceful shutdown on SIGTERM / Ctrl+C.
 
+#![allow(dead_code)]
 use anyhow::Result;
 use tokio::signal;
 use tracing::{info, warn};
