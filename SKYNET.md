@@ -1,6 +1,6 @@
-# SKYNET — Mission
+# SKYNET - Mission
 
-SKYNET is a **living threat intelligence organism** — a multi-agent platform
+SKYNET is a **living threat intelligence organism** - a multi-agent platform
 whose nervous system is the **Agentic OS kernel**. The kernel treats AI
 agents as first-class OS citizens, the way Unix treats processes. Agents
 observe, reason, decide, and act under a constitutional policy boundary that
@@ -10,7 +10,7 @@ is itself cryptographically signed.
 
 1. **Security-first at every layer.** Memory safety in the kernel (Rust),
    microVM isolation for every external tool, and policy-gated execution
-   for every privileged action. No "trusted internal network" — every
+   for every privileged action. No "trusted internal network" = every
    inter-agent message is authenticated and encrypted.
 
 2. **Post-quantum by default.** All long-lived key material, audit
