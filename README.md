@@ -1,4 +1,4 @@
-# SKYNET — Agentic OS
+# PipeFish Recon
 
 > A living threat intelligence organism whose nervous system is the
 > **Agentic OS kernel**. Five AI agents observing, reasoning, and acting
