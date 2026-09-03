@@ -1,4 +1,4 @@
-# SKYNET — Agentic OS
+# PipeFish Recon
 
 > A living threat intelligence organism whose nervous system is the
 > **Agentic OS kernel**. Five AI agents observing, reasoning, and acting
@@ -7,13 +7,13 @@
 ## Monorepo layout
 
 ```
-skynet/
+recon/
   kernel/        # Rust workspace crate — the Agentic OS kernel
   dashboard/     # Next.js 15 operator UI (placeholder)
   .github/
     workflows/   # CI + security scans
-  SKYNET.md      # Mission and principles
-  SOUL.md        # Agent role definitions (SKYNET-A1 .. A5)
+  RECON.md      # Mission and principles
+  SOUL.md        # Agent role definitions (RECON-A1 .. A5)
   POLICY.md      # Operating constitution (escalation, ACL, key management)
 ```
 
@@ -42,4 +42,4 @@ cargo build --manifest-path kernel/Cargo.toml --features pq-crypto
 3. **Every action is a commit.** Every agentic decision emits a Conventional
    Commit event. Auditable, diff-able, revertible.
 
-See `SKYNET.md` and the architecture blueprint for full context.
+See `RECON.md` and the architecture blueprint for full context.
