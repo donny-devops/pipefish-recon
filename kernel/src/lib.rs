@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports, unused_variables)]
 
 //! PipeFish RECON Agentic OS — kernel library.
 //!

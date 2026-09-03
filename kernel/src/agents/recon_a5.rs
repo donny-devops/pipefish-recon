@@ -14,8 +14,6 @@ pub struct ReconA5 {
     bus_tx: mpsc::Sender<BusEvent>,
 }
 
-pub type SkynetA5 = ReconA5;
-
 impl ReconA5 {
     pub fn new(bus_tx: mpsc::Sender<BusEvent>) -> Self {
         Self { bus_tx }
