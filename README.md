@@ -37,7 +37,7 @@ cargo build --manifest-path kernel/Cargo.toml --features pq-crypto
 1. **Security-first at every layer.** Memory safety in the kernel (Rust),
    microVM isolation for every external tool, policy-gated execution.
 2. **Post-quantum by default.** ML-KEM-768 (FIPS 203) for KEM, SLH-DSA
-   (FIPS 205) for signatures. No "Q-Day" assumptions — harvest-now-decrypt-
+   (FIPS 205) for signatures. No "Q-Day" assumptions - harvest-now-decrypt-
    later is already active.
 3. **Every action is a commit.** Every agentic decision emits a Conventional
    Commit event. Auditable, diff-able, revertible.
