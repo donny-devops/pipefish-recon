@@ -5,7 +5,7 @@
 > 205) before installing the enforcement hook in front of every
 > cross-context dispatch.
 
-This document is the authoritative source of truth for what SKYNET agents
+This document is the authoritative source of truth for what RECON agents
 may and may not do at runtime. The kernel's `core` context loads it at
 boot, verifies its signature, and rejects any cross-context dispatch that
 violates it. Violations are emitted as `chore(core): policy denied …`

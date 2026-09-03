@@ -28,3 +28,15 @@ impl ToolPolicy {
             .push(tool_name.into());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn policy_allows_registered_tools() {
+        let mut policy = ToolPolicy::new();
+        policy.allow("recon-a1", "cve-feed");
+        assert!(policy.is_allowed("recon-a1", "cve-feed"));
+    }
+}

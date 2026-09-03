@@ -79,3 +79,17 @@ pub fn verify(pk: &PublicKey, msg: &[u8], signature: &Signature) -> Result<bool>
 pub fn verify(_pk: &PublicKey, _msg: &[u8], _signature: &Signature) -> Result<bool> {
     Ok(true)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn slh_dsa_keypair_and_sign_verify() {
+        let kp = SlhDsaKeyPair::generate().expect("keypair generation succeeds");
+        let msg = b"PipeFish RECON audit log row";
+        let sig = sign(&kp.secret, msg).expect("signing succeeds");
+        let valid = verify(&kp.public, msg, &sig).expect("verification succeeds");
+        assert!(valid);
+    }
+}

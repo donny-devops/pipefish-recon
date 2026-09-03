@@ -16,3 +16,21 @@ impl CommitEngine {
         evt.to_commit_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::events::{CommitType, ContextId, ContextScope};
+
+    #[test]
+    fn engine_format_event() {
+        let engine = CommitEngine::new();
+        let evt = BusEvent::new(
+            ContextId::Dx,
+            CommitType::Docs,
+            ContextScope::Dx,
+            "generated SBOM artifact",
+        );
+        assert_eq!(engine.format(&evt), "docs(dx): generated SBOM artifact");
+    }
+}

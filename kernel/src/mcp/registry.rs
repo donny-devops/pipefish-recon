@@ -47,3 +47,27 @@ impl ToolRegistry {
         self.entries.is_empty()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tool_registry_lifecycle() {
+        let mut registry = ToolRegistry::new();
+        assert!(registry.is_empty());
+        assert_eq!(registry.len(), 0);
+
+        registry.register(ToolEntry {
+            name: "shodan".to_string(),
+            transport: Transport::Stdio,
+            acl_tags: vec!["osint".to_string()],
+        });
+
+        assert!(!registry.is_empty());
+        assert_eq!(registry.len(), 1);
+        let entry = registry.get("shodan").expect("entry exists");
+        assert_eq!(entry.transport, Transport::Stdio);
+        assert_eq!(entry.acl_tags, vec!["osint".to_string()]);
+    }
+}

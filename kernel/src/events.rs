@@ -143,11 +143,35 @@ mod tests {
             ContextId::Llm,
             CommitType::Feat,
             ContextScope::Llm,
-            "routed threat signal to SKYNET-A3",
-        );
+            "routed threat signal to RECON-A3",
+        )
+        .with_severity(Severity::High)
+        .with_payload(serde_json::json!({"threat_id": "CVE-2026-1337"}));
+
         assert_eq!(
             evt.to_commit_string(),
-            "feat(llm): routed threat signal to SKYNET-A3"
+            "feat(llm): routed threat signal to RECON-A3"
         );
+        assert_eq!(evt.severity, Some(Severity::High));
+        assert!(evt.payload.is_some());
+    }
+
+    #[test]
+    fn commit_types_and_scopes() {
+        assert_eq!(CommitType::Fix.as_str(), "fix");
+        assert_eq!(CommitType::Chore.as_str(), "chore");
+        assert_eq!(CommitType::Docs.as_str(), "docs");
+        assert_eq!(CommitType::Refactor.as_str(), "refactor");
+        assert_eq!(CommitType::Security.as_str(), "security");
+
+        assert_eq!(ContextScope::Core.as_str(), "core");
+        assert_eq!(ContextScope::Bus.as_str(), "bus");
+        assert_eq!(ContextScope::Tool.as_str(), "tool");
+        assert_eq!(ContextScope::Dx.as_str(), "dx");
+
+        assert_eq!(ContextId::Core.as_str(), "core");
+        assert_eq!(ContextId::Bus.as_str(), "bus");
+        assert_eq!(ContextId::Tool.as_str(), "tool");
+        assert_eq!(ContextId::Dx.as_str(), "dx");
     }
 }

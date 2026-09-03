@@ -1,4 +1,6 @@
-//! SKYNET Agentic OS — kernel entrypoint.
+#![allow(dead_code)]
+
+//! PipeFish RECON Agentic OS — kernel entrypoint.
 //!
 //! Boots the five runtime contexts (core, bus, llm, tool, dx) concurrently
 //! atop a single Tokio runtime, wires them together through an mpsc bus, and
@@ -32,7 +34,7 @@ fn init_tracing() {
 async fn main() -> Result<()> {
     init_tracing();
 
-    println!("SKYNET Agentic OS v0.1.0 — kernel online");
+    println!("PipeFish RECON Agentic OS v0.1.0 — kernel online");
     info!("kernel boot sequence initiated");
 
     let (bus, bus_tx) = BusContext::new();

@@ -28,3 +28,26 @@ impl CommitLog {
         self.entries.is_empty()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::events::{CommitType, ContextId, ContextScope};
+
+    #[test]
+    fn commit_log_operations() {
+        let mut log = CommitLog::new();
+        assert!(log.is_empty());
+        assert_eq!(log.len(), 0);
+
+        let evt = BusEvent::new(
+            ContextId::Core,
+            CommitType::Feat,
+            ContextScope::Core,
+            "policy verified",
+        );
+        log.push(evt);
+        assert!(!log.is_empty());
+        assert_eq!(log.len(), 1);
+    }
+}

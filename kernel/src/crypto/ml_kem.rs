@@ -80,3 +80,16 @@ pub fn decapsulate(sk: &SecretKey, ct: &Ciphertext) -> Result<SharedSecret> {
 pub fn decapsulate(_sk: &SecretKey, _ct: &Ciphertext) -> Result<SharedSecret> {
     Ok(SharedSecret(Vec::new()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ml_kem_keypair_encapsulate_decapsulate() {
+        let kp = MlKemKeyPair::generate().expect("keypair generation succeeds");
+        let (ct, ss_enc) = encapsulate(&kp.public).expect("encapsulation succeeds");
+        let ss_dec = decapsulate(&kp.secret, &ct).expect("decapsulation succeeds");
+        assert_eq!(ss_enc.0, ss_dec.0);
+    }
+}
