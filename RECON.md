@@ -1,6 +1,6 @@
-# SKYNET — Mission
+# RECON - Mission
 
-SKYNET is a **living threat intelligence organism** — a multi-agent platform
+RECON is a **living threat intelligence organism** - a multi-agent platform
 whose nervous system is the **Agentic OS kernel**. The kernel treats AI
 agents as first-class OS citizens, the way Unix treats processes. Agents
 observe, reason, decide, and act under a constitutional policy boundary that
@@ -10,7 +10,7 @@ is itself cryptographically signed.
 
 1. **Security-first at every layer.** Memory safety in the kernel (Rust),
    microVM isolation for every external tool, and policy-gated execution
-   for every privileged action. No "trusted internal network" — every
+   for every privileged action. No "trusted internal network" - every
    inter-agent message is authenticated and encrypted.
 
 2. **Post-quantum by default.** All long-lived key material, audit
@@ -29,14 +29,14 @@ is itself cryptographically signed.
 
 | Agent | Role |
 |---|---|
-| **SKYNET-A1** | Signal Ingestion & Normalization |
-| **SKYNET-A2** | Threat Intelligence Synthesis (MITRE ATT&CK, TTP correlation) |
-| **SKYNET-A3** | Decision & Routing Hub (severity-gated, HIL escalation) |
-| **SKYNET-A4** | Autonomous Defense Engine (nftables, ACL, WAF, GH Actions) |
-| **SKYNET-A5** | Governance & Audit Governor (FIPS, AI-BOM, signed reports) |
+| **RECON-A1** | Signal Ingestion & Normalization |
+| **RECON-A2** | Threat Intelligence Synthesis (MITRE ATT&CK, TTP correlation) |
+| **RECON-A3** | Decision & Routing Hub (severity-gated, HIL escalation) |
+| **RECON-A4** | Autonomous Defense Engine (nftables, ACL, WAF, GH Actions) |
+| **RECON-A5** | Governance & Audit Governor (FIPS, AI-BOM, signed reports) |
 
 ## Further reading
 
-- Architecture blueprint: `../skynet-agentic-os-blueprint.md`
+- Architecture blueprint: `../recon-agentic-os-blueprint.md`
 - Agent specifications: [`SOUL.md`](./SOUL.md)
 - Runtime constitution: [`POLICY.md`](./POLICY.md)
