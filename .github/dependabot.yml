@@ -1,0 +1,29 @@
+# Dependabot configuration for PipeFish RECON
+version: 2
+updates:
+  # Maintain Cargo dependencies in kernel/
+  - package-ecosystem: "cargo"
+    directory: "/kernel"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "rust"
+
+  # Maintain npm dependencies in dashboard/
+  - package-ecosystem: "npm"
+    directory: "/dashboard"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "javascript"
+
+  # Maintain GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "actions"
