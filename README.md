@@ -13,7 +13,7 @@ recon/
   .github/
     workflows/   # CI + security scans
   RECON.md      # Mission and principles
-  SOUL.md        # Agent role definitions (SKYNET-A1 .. A5)
+  SOUL.md        # Agent role definitions (RECON-A1 .. A5)
   POLICY.md      # Operating constitution (escalation, ACL, key management)
 ```
 
