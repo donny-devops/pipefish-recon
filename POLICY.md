@@ -5,11 +5,25 @@
 > 205) before installing the enforcement hook in front of every
 > cross-context dispatch.
 
-This document is the authoritative source of truth for what RECON agents
-may and may not do at runtime. The kernel's `core` context loads it at
-boot, verifies its signature, and rejects any cross-context dispatch that
-violates it. Violations are emitted as `chore(core): policy denied …`
-commit events.
+This document is the authoritative **design** source of truth for what RECON
+agents may and may not do at runtime. The intended kernel behavior: the
+`core` context loads this file at boot, verifies its signature, and rejects
+any cross-context dispatch that violates it. Violations are emitted as
+`chore(core): policy denied …` commit events.
+
+### Implementation status (kernel v0.1.0)
+
+Verified against `kernel/src`:
+
+- `CoreContext` emits `"policy loaded; watchdog armed"` but does **not**
+  read this file or verify a signature. The signing-key slot stays `None`.
+- `mcp::policy::ToolPolicy::is_allowed` returns **`true` for every**
+  `(agent_id, tool_name)` pair until a real policy is loaded.
+- `ToolContext` starts with an empty `ToolRegistry` (no MCP servers).
+- Optional `pq-crypto` signatures use `SphincsShake128sSimple`, not the
+  SLH-DSA-SHA2-128s parameter set named in §4.
+
+Treat the tables below as the constitution to implement, not as a live ACL.
 
 ---
 
@@ -90,6 +104,10 @@ Any (agent, tool) pair not explicitly listed is **denied by default**.
 - Retention: **7 years** for audit rows, **2 years** for raw signal
   payloads, **indefinite** for signed threat reports and AI-BOMs.
 
+  Implementation note: today's `DxContext` writes only its own boot/flush
+  events to `./audit_log.jsonl`. `BusContext` logs commits via `tracing`
+  and does not forward the full stream to dx.
+
 ---
 
 ## 6. Amendment Procedure
@@ -103,3 +121,5 @@ Changes to this document require:
 
 The kernel **will refuse to boot** if the on-disk `POLICY.md` signature
 does not verify against the embedded kernel public key.
+
+That refusal is **not implemented** in v0.1.0 (see Implementation status).
