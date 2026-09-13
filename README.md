@@ -83,8 +83,8 @@ cargo run   --manifest-path kernel/Cargo.toml
 ```
 
 Binary name: `pipefish-recon-kernel` (package name; `main.rs` + `lib.rs`).
-With `--manifest-path kernel/Cargo.toml`, Cargo writes artifacts under
-`kernel/target/` unless you set `CARGO_TARGET_DIR`.
+With the repository workspace, Cargo writes artifacts under the workspace-root
+`target/` by default; set `CARGO_TARGET_DIR` to override it.
 
 Logging uses `tracing` + `EnvFilter`. Default is `info`:
 
