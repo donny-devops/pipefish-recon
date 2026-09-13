@@ -121,8 +121,8 @@ Constraints when `pq-crypto` is on:
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `.github/workflows/ci.yml` | push + pull_request | `cargo check`, `test`, `clippy -D warnings` on `kernel/Cargo.toml`. Permissions: `contents: read`. |
-| `.github/workflows/security-scan.yml` | push to `main`, Monday 06:00 UTC | `cargo audit --file kernel/Cargo.lock` then falls back to `cargo audit`. |
+| `.github/workflows/ci.yml` | push + pull_request | `cargo fmt --manifest-path kernel/Cargo.toml -- --check`, `cargo check`, `test`, `clippy -D warnings` on `kernel/Cargo.toml`. Permissions: `contents: read`. |
+| `.github/workflows/security-scan.yml` | push to `main`, Monday 06:00 UTC | `cargo generate-lockfile --manifest-path kernel/Cargo.toml` then `cargo audit --file Cargo.lock`. |
 | `.github/workflows/release.yml` | tag `v*`, or `workflow_dispatch` | Cross-compile release binaries for linux-x86_64, macos-x86_64 (macos-13), macos-arm64, windows-x86_64. Permissions: `contents: write`. Uploads artifacts; does not create a GitHub Release. |
 
 Dependabot (weekly) updates:
@@ -131,9 +131,8 @@ Dependabot (weekly) updates:
 - `npm` in `/dashboard` (no lockfile yet — PRs may be empty until the UI exists)
 - `github-actions` at repo root
 
-`Cargo.lock` is gitignored. `cargo audit --file kernel/Cargo.lock` will miss
-unless a lockfile is generated locally. Reproducible release builds need an
-explicit lockfile policy if you want one.
+`Cargo.lock` is gitignored. Security scan generates a workspace-root lockfile
+in CI before running `cargo audit --file Cargo.lock`.
 
 ## Troubleshooting and pitfalls
 
@@ -144,8 +143,8 @@ explicit lockfile policy if you want one.
 | Kernel runs but no agents / no CVE polling | Agents are not started from `main`. Signal ingestion in `SOUL.md` is the design, not this binary. |
 | `audit_log.jsonl` missing most events | `DxContext` does not subscribe to the bus; it only writes its own rows. `BusContext` logs to tracing. |
 | POLICY.md not enforced | `ToolPolicy::is_allowed` returns `true` for every pair. No `POLICY.md.sig` check at boot. |
-| Release job cannot find the binary | Workflow copies from `target/<triple>/release/pipefish-recon-kernel`. `cargo --manifest-path kernel/Cargo.toml` normally emits `kernel/target/...` unless `CARGO_TARGET_DIR=target`. |
-| Dashboard `npm install` / `next dev` | `dashboard/package.json` only has `name` + `version`. There is no Next.js app to start. |
+| Release job cannot find the binary | Verify the build step completed for the same `<triple>` and that the artifact path matches `target/<triple>/release/pipefish-recon-kernel` at the workspace root. |
+| Dashboard `npm install` / `next dev` | `dashboard/package.json` only has `name`, `version`, and `private`. There is no Next.js app to start. |
 | Security policy “1.0.x supported” | Crate version is `0.1.0`. See `SECURITY.md`. |
 | Stale SKYNET names | The project was renamed to PipeFish RECON. Prefer `RECON-A1` … `A5` in new code and docs. |
 

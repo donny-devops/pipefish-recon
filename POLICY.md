@@ -21,7 +21,7 @@ Verified against `kernel/src`:
   `(agent_id, tool_name)` pair until a real policy is loaded.
 - `ToolContext` starts with an empty `ToolRegistry` (no MCP servers).
 - Optional `pq-crypto` signatures use `SphincsShake128sSimple`, not the
-  SLH-DSA-SHA2-128s parameter set named in §4.
+  SLH-DSA-SHA2-128s parameter set named in the signed-policy note above.
 
 Treat the tables below as the constitution to implement, not as a live ACL.
 

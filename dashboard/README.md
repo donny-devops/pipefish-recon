@@ -8,7 +8,7 @@ leave the Rust kernel.
 ## Current status
 
 This package is a **placeholder**. `package.json` currently contains only
-`name` and `version` (`0.1.0`, `private: true`). There is no `next`
+`name`, `version` (`0.1.0`), and `private` (`true`). There is no `next`
 dependency, no `scripts` block, and no app source tree.
 
 Do not expect `npm install` / `npm run dev` to start a UI until that

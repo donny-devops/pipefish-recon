@@ -27,9 +27,10 @@ Security vulnerabilities: follow [`SECURITY.md`](./SECURITY.md) (email, not a pu
 
 ## Local checks (must match CI)
 
-CI (`.github/workflows/ci.yml`) runs on pushes to `main`/`master` and on pull requests:
+CI (`.github/workflows/ci.yml`) runs on every push and on pull requests:
 
 ```bash
+cargo fmt    --manifest-path kernel/Cargo.toml -- --check
 cargo check  --manifest-path kernel/Cargo.toml
 cargo test   --manifest-path kernel/Cargo.toml
 cargo clippy --manifest-path kernel/Cargo.toml -- -D warnings
