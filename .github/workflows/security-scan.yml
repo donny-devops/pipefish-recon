@@ -17,4 +17,4 @@ jobs:
       - name: Install cargo-audit
         run: cargo install cargo-audit
       - name: Run audit
-        run: cargo generate-lockfile --manifest-path kernel/Cargo.toml && cargo audit --file Cargo.lock
+        run: cargo generate-lockfile --manifest-path kernel/Cargo.toml && cargo check --manifest-path kernel/Cargo.toml --locked && cargo audit --file Cargo.lock

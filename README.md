@@ -122,7 +122,7 @@ Constraints when `pq-crypto` is on:
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `.github/workflows/ci.yml` | push + pull_request | `cargo fmt --manifest-path kernel/Cargo.toml -- --check`, `cargo check`, `test`, `clippy -D warnings` on `kernel/Cargo.toml`. Permissions: `contents: read`. |
-| `.github/workflows/security-scan.yml` | push to `main`, Monday 06:00 UTC | `cargo generate-lockfile --manifest-path kernel/Cargo.toml` then `cargo audit --file Cargo.lock`. |
+| `.github/workflows/security-scan.yml` | push to `main`, Monday 06:00 UTC | `cargo generate-lockfile --manifest-path kernel/Cargo.toml`, `cargo check --manifest-path kernel/Cargo.toml --locked`, then `cargo audit --file Cargo.lock`. |
 | `.github/workflows/release.yml` | tag `v*`, or `workflow_dispatch` | Cross-compile release binaries for linux-x86_64, macos-x86_64 (macos-13), macos-arm64, windows-x86_64. Permissions: `contents: write`. Uploads artifacts; does not create a GitHub Release. |
 
 Dependabot (weekly) updates:
