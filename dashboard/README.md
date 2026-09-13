@@ -1,9 +1,23 @@
 # @pipefish-recon/dashboard
 
-Operator surface for the PipeFish RECON Agentic OS — Next.js 15 + React Server
-Components. Ships **LibOQS compiled to WebAssembly** so SLH-DSA (FIPS 205)
-signatures on audit rows and threat reports are verified **in the browser**,
-client-side, without any private key ever leaving the Rust kernel.
+Intended operator surface for the PipeFish RECON Agentic OS: a Next.js 15
+app with React Server Components, verifying SLH-DSA (FIPS 205) signatures
+in the browser via LibOQS compiled to WebAssembly so private keys never
+leave the Rust kernel.
 
-This package is a placeholder. The full dashboard implementation lands in a
-later milestone.
+## Current status
+
+This package is a **placeholder**. `package.json` currently contains only
+`name`, `version` (`0.1.0`), and `private` (`true`). There is no `next`
+dependency, no `scripts` block, and no app source tree.
+
+Do not expect `npm install` / `npm run dev` to start a UI until that
+milestone lands.
+
+Dependabot is configured for `npm` in `/dashboard` (weekly). Those updates
+will stay idle until a lockfile and real dependencies exist.
+
+## Related docs
+
+- Kernel boot and constraints: [`../README.md`](../README.md)
+- Runtime constitution (design): [`../POLICY.md`](../POLICY.md)

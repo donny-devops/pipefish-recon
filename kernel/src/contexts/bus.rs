@@ -19,12 +19,7 @@ pub struct BusContext {
 impl BusContext {
     pub fn new() -> (Self, mpsc::Sender<BusEvent>) {
         let (tx, rx) = mpsc::channel(BUS_CHANNEL_CAPACITY);
-        (
-            Self {
-                rx: Mutex::new(rx),
-            },
-            tx,
-        )
+        (Self { rx: Mutex::new(rx) }, tx)
     }
 
     pub async fn run(&self) -> Result<()> {
