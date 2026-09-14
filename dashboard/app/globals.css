@@ -44,7 +44,12 @@ a {
   gap: 16px;
   margin-bottom: 28px;
   padding-bottom: 16px;
+  padding-top: 8px;
   border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 2;
 }
 
 .brand {
