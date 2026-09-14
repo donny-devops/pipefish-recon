@@ -43,3 +43,5 @@ cargo build --manifest-path kernel/Cargo.toml --features pq-crypto
    Commit event. Auditable, diff-able, revertible.
 
 See `RECON.md` and the architecture blueprint for full context.
+
+Version plan: [`ROADMAP.md`](./ROADMAP.md).

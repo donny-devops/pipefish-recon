@@ -32,6 +32,7 @@ impl LlmContext {
         let _ = self.bus_tx.send(boot).await;
 
         let mut tick = interval(Duration::from_secs(30));
+        tick.tick().await;
         loop {
             tick.tick().await;
             let idle = BusEvent::new(

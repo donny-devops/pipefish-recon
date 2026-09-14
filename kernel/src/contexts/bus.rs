@@ -1,12 +1,12 @@
 //! BusContext — the kernel's IPC broker.
 //!
 //! Receives [`BusEvent`]s from every other context over a single mpsc inbox,
-//! logs each one as a Conventional Commit string, and (in a fuller build)
-//! fans them out to subscribers. For the skeleton we just sink and log.
+//! logs each one as a Conventional Commit string, and fans a clone out to the
+//! dx audit subscriber.
 
 use anyhow::Result;
 use tokio::sync::{mpsc, Mutex};
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::events::BusEvent;
 
@@ -14,16 +14,21 @@ const BUS_CHANNEL_CAPACITY: usize = 1024;
 
 pub struct BusContext {
     rx: Mutex<mpsc::Receiver<BusEvent>>,
+    dx_tx: mpsc::Sender<BusEvent>,
 }
 
 impl BusContext {
-    pub fn new() -> (Self, mpsc::Sender<BusEvent>) {
+    /// Returns `(bus, producer_tx, dx_subscriber_rx)`.
+    pub fn new() -> (Self, mpsc::Sender<BusEvent>, mpsc::Receiver<BusEvent>) {
         let (tx, rx) = mpsc::channel(BUS_CHANNEL_CAPACITY);
+        let (dx_tx, dx_rx) = mpsc::channel(BUS_CHANNEL_CAPACITY);
         (
             Self {
                 rx: Mutex::new(rx),
+                dx_tx,
             },
             tx,
+            dx_rx,
         )
     }
 
@@ -37,8 +42,36 @@ impl BusContext {
                 "{}",
                 evt.to_commit_string()
             );
+            if self.dx_tx.send(evt).await.is_err() {
+                warn!("dx subscriber dropped; bus exiting");
+                break;
+            }
         }
         info!("bus context: all senders dropped; shutting down");
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::events::{CommitType, ContextId, ContextScope};
+
+    #[tokio::test]
+    async fn bus_fans_out_to_dx_subscriber() {
+        let (bus, tx, mut dx_rx) = BusContext::new();
+        let handle = tokio::spawn(async move { bus.run().await });
+        let evt = BusEvent::new(
+            ContextId::Core,
+            CommitType::Chore,
+            ContextScope::Core,
+            "healthcheck ok",
+        );
+        tx.send(evt).await.expect("send");
+        drop(tx);
+        let got = dx_rx.recv().await.expect("fan-out event");
+        assert_eq!(got.description, "healthcheck ok");
+        assert_eq!(got.source, ContextId::Core);
+        handle.await.expect("bus join").expect("bus run");
     }
 }

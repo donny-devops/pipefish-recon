@@ -3,9 +3,11 @@
 //! Pure deterministic logic engine — no LLM on the hot path. Classifies
 //! severity, applies NIST AI RMF risk-posture rules, and routes signals to
 //! RECON-A4 directly or via the human-in-the-loop escalation queue.
+//! v0.2: long-running stub (no live routing).
 
 use anyhow::Result;
 use tokio::sync::mpsc;
+use tokio::time::{interval, Duration};
 use tracing::info;
 
 use crate::events::{BusEvent, CommitType, ContextId, ContextScope};
@@ -22,12 +24,27 @@ impl ReconA3 {
     pub async fn run(&self) -> Result<()> {
         info!("RECON-A3 online");
         let boot = BusEvent::new(
-            ContextId::Core,
+            ContextId::ReconA3,
             CommitType::Feat,
             ContextScope::Core,
             "RECON-A3 online (decision/routing stub)",
         );
         let _ = self.bus_tx.send(boot).await;
+
+        let mut tick = interval(Duration::from_secs(60));
+        tick.tick().await;
+        loop {
+            tick.tick().await;
+            let hb = BusEvent::new(
+                ContextId::ReconA3,
+                CommitType::Chore,
+                ContextScope::Core,
+                "RECON-A3 heartbeat",
+            );
+            if self.bus_tx.send(hb).await.is_err() {
+                break;
+            }
+        }
         Ok(())
     }
 }
@@ -40,8 +57,10 @@ mod tests {
     async fn recon_a3_boot_emits_event() {
         let (tx, mut rx) = mpsc::channel(16);
         let agent = ReconA3::new(tx);
-        agent.run().await.expect("agent run succeeds");
+        let handle = tokio::spawn(async move { agent.run().await });
         let evt = rx.recv().await.expect("event received");
+        assert_eq!(evt.source, ContextId::ReconA3);
         assert_eq!(evt.description, "RECON-A3 online (decision/routing stub)");
+        handle.abort();
     }
 }

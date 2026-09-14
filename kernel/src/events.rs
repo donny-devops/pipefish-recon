@@ -21,6 +21,7 @@ pub struct BusEvent {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
 pub enum CommitType {
     Feat,
     Fix,
@@ -44,6 +45,7 @@ impl CommitType {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
 pub enum ContextScope {
     Core,
     Bus,
@@ -64,13 +66,24 @@ impl ContextScope {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "kebab-case")]
 pub enum ContextId {
     Core,
     Bus,
     Llm,
     Tool,
     Dx,
+    #[serde(rename = "recon-a1")]
+    ReconA1,
+    #[serde(rename = "recon-a2")]
+    ReconA2,
+    #[serde(rename = "recon-a3")]
+    ReconA3,
+    #[serde(rename = "recon-a4")]
+    ReconA4,
+    #[serde(rename = "recon-a5")]
+    ReconA5,
 }
 
 impl ContextId {
@@ -81,11 +94,43 @@ impl ContextId {
             ContextId::Llm => "llm",
             ContextId::Tool => "tool",
             ContextId::Dx => "dx",
+            ContextId::ReconA1 => "recon-a1",
+            ContextId::ReconA2 => "recon-a2",
+            ContextId::ReconA3 => "recon-a3",
+            ContextId::ReconA4 => "recon-a4",
+            ContextId::ReconA5 => "recon-a5",
         }
+    }
+
+    pub fn is_agent(&self) -> bool {
+        matches!(
+            self,
+            ContextId::ReconA1
+                | ContextId::ReconA2
+                | ContextId::ReconA3
+                | ContextId::ReconA4
+                | ContextId::ReconA5
+        )
+    }
+
+    pub fn all_runtime() -> &'static [ContextId] {
+        &[
+            ContextId::Core,
+            ContextId::Bus,
+            ContextId::Llm,
+            ContextId::Tool,
+            ContextId::Dx,
+            ContextId::ReconA1,
+            ContextId::ReconA2,
+            ContextId::ReconA3,
+            ContextId::ReconA4,
+            ContextId::ReconA5,
+        ]
     }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
 pub enum Severity {
     Critical,
     High,
@@ -173,5 +218,9 @@ mod tests {
         assert_eq!(ContextId::Bus.as_str(), "bus");
         assert_eq!(ContextId::Tool.as_str(), "tool");
         assert_eq!(ContextId::Dx.as_str(), "dx");
+        assert_eq!(ContextId::ReconA1.as_str(), "recon-a1");
+        assert_eq!(ContextId::ReconA5.as_str(), "recon-a5");
+        assert!(ContextId::ReconA3.is_agent());
+        assert!(!ContextId::Core.is_agent());
     }
 }

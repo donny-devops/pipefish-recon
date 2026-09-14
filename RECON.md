@@ -37,6 +37,7 @@ is itself cryptographically signed.
 
 ## Further reading
 
-- Architecture blueprint: `../recon-agentic-os-blueprint.md`
+- Version plan: [`ROADMAP.md`](./ROADMAP.md)
+- Developer / operator guide: [`README.md`](./README.md)
 - Agent specifications: [`SOUL.md`](./SOUL.md)
 - Runtime constitution: [`POLICY.md`](./POLICY.md)
