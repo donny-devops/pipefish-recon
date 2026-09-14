@@ -8,7 +8,7 @@ use anyhow::Result;
 use tokio::sync::{mpsc, Mutex};
 use tracing::{info, warn};
 
-use crate::events::BusEvent;
+use crate::events::{BusEvent, CommitType, ContextId, ContextScope};
 
 const BUS_CHANNEL_CAPACITY: usize = 1024;
 
@@ -34,6 +34,22 @@ impl BusContext {
 
     pub async fn run(&self) -> Result<()> {
         info!("bus context online — IPC broker armed");
+        let boot = BusEvent::new(
+            ContextId::Bus,
+            CommitType::Chore,
+            ContextScope::Bus,
+            "IPC broker armed",
+        );
+        info!(
+            event_id = %boot.id,
+            source = boot.source.as_str(),
+            "{}",
+            boot.to_commit_string()
+        );
+        if self.dx_tx.send(boot).await.is_err() {
+            warn!("dx subscriber dropped before drain");
+            return Ok(());
+        }
         let mut rx = self.rx.lock().await;
         while let Some(evt) = rx.recv().await {
             info!(
@@ -69,6 +85,8 @@ mod tests {
         );
         tx.send(evt).await.expect("send");
         drop(tx);
+        let boot = dx_rx.recv().await.expect("bus boot event");
+        assert_eq!(boot.source, ContextId::Bus);
         let got = dx_rx.recv().await.expect("fan-out event");
         assert_eq!(got.description, "healthcheck ok");
         assert_eq!(got.source, ContextId::Core);
