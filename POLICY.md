@@ -5,11 +5,29 @@
 > 205) before installing the enforcement hook in front of every
 > cross-context dispatch.
 
-This document is the authoritative source of truth for what RECON agents
-may and may not do at runtime. The kernel's `core` context loads it at
-boot, verifies its signature, and rejects any cross-context dispatch that
-violates it. Violations are emitted as `chore(core): policy denied …`
-commit events.
+This document is the authoritative **design** source of truth for what RECON
+agents may and may not do at runtime. The intended kernel behavior: the
+`core` context loads this file at boot, verifies its signature, and rejects
+any cross-context dispatch that violates it. Violations are emitted as
+`chore(core): policy denied …` commit events.
+
+### Implementation status (kernel v0.2.0)
+
+Verified against `kernel/src`:
+
+- `ToolPolicy` parses **§2 ACL Matrix** from this file at boot
+  (`PIPEFISH_POLICY_PATH`, else `./POLICY.md`, else `kernel/../POLICY.md`).
+  `is_allowed` is **deny-by-default**. Empty / missing tables fail boot.
+- `CoreContext` reports the allow-rule count on its boot event. The
+  signing-key slot stays `None`.
+- `ToolContext::check_dispatch` consults that ACL. The MCP registry is
+  still empty — no live tool servers.
+- `POLICY.md.sig` is **not** verified (see [`ROADMAP.md`](./ROADMAP.md) v0.4).
+- Optional `pq-crypto` signatures use `SphincsShake128sSimple`, not the
+  SLH-DSA-SHA2-128s parameter set named in the signed-policy note above.
+
+Treat the escalation, network-mutation, and key-management sections as the
+constitution to implement. The ACL table is live.
 
 ---
 
@@ -90,6 +108,10 @@ Any (agent, tool) pair not explicitly listed is **denied by default**.
 - Retention: **7 years** for audit rows, **2 years** for raw signal
   payloads, **indefinite** for signed threat reports and AI-BOMs.
 
+  Implementation note: v0.2 `DxContext` subscribes to the full bus fan-out
+  and appends every `BusEvent` to `./audit_log.jsonl`. Google Sheets sync
+  is not configured (`ROADMAP.md` v0.6).
+
 ---
 
 ## 6. Amendment Procedure
@@ -103,3 +125,6 @@ Changes to this document require:
 
 The kernel **will refuse to boot** if the on-disk `POLICY.md` signature
 does not verify against the embedded kernel public key.
+
+That refusal is **not implemented** in v0.2.0 (ACL load is; signature
+verify is [`ROADMAP.md`](./ROADMAP.md) v0.4).

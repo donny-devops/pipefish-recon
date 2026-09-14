@@ -4,7 +4,8 @@
 //!
 //! Provides the core context abstractions, post-quantum cryptographic
 //! primitives (ML-KEM-768, SLH-DSA), MCP server registry and policy engine,
-//! Conventional Commits engine, and agent lifecycle management.
+//! Conventional Commits engine, agent lifecycle management, and the
+//! localhost operator HTTP API.
 
 pub mod agents;
 pub mod commits;
@@ -12,3 +13,4 @@ pub mod contexts;
 pub mod crypto;
 pub mod events;
 pub mod mcp;
+pub mod operator;

@@ -3,4 +3,5 @@
 Cargo.lock
 audit_log.jsonl
 node_modules
+.next
 .DS_Store

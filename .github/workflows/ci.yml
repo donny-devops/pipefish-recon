@@ -1,21 +1,62 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+  pull_request:
 
 permissions:
   contents: read
+
+# Cancel previous in-flight CI runs on the same branch/PR when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   kernel-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy
-      - uses: Swatinem/rust-cache@v2
+          components: clippy, rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Cargo fmt check
+        run: cargo fmt --manifest-path kernel/Cargo.toml -- --check
+
       - name: Cargo check
         run: cargo check --manifest-path kernel/Cargo.toml
+
       - name: Cargo test
         run: cargo test --manifest-path kernel/Cargo.toml
+
       - name: Cargo clippy
         run: cargo clippy --manifest-path kernel/Cargo.toml -- -D warnings
+
+  dashboard-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
