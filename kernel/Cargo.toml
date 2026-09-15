@@ -19,7 +19,7 @@ axum = "=0.7.9"
 tower-http = { version = "=0.5.2", features = ["cors"] }
 
 [dev-dependencies]
-tower = { version = "=0.5.1", features = ["util"] }
+tower = { version = "=0.5.3", features = ["util"] }
 http-body-util = "=0.1.2"
 
 [dependencies.oqs]
