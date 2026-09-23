@@ -23,7 +23,7 @@ tower = { version = "=0.5.1", features = ["util"] }
 http-body-util = "=0.1.2"
 
 [dependencies.oqs]
-version = "0.9"
+version = "0.11"
 optional = true
 
 [features]
