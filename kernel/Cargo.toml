@@ -15,7 +15,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "~1.11.1", features = ["v4", "serde"] }
 chrono = { version = "~0.4.38", features = ["serde"] }
 tokio-util = { version = "0.7" }
-axum = "=0.7.9"
+axum = "=0.8.9"
 tower-http = { version = "=0.5.2", features = ["cors"] }
 
 [dev-dependencies]
