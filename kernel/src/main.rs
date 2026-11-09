@@ -19,6 +19,7 @@ use pipefish_recon_kernel::agents::recon_a2::ReconA2;
 use pipefish_recon_kernel::agents::recon_a3::ReconA3;
 use pipefish_recon_kernel::agents::recon_a4::ReconA4;
 use pipefish_recon_kernel::agents::recon_a5::ReconA5;
+use pipefish_recon_kernel::billing::BillingGate;
 use pipefish_recon_kernel::contexts::{
     bus::BusContext, core::CoreContext, dx::DxContext, llm::LlmContext, tool::ToolContext,
 };
@@ -44,12 +45,22 @@ async fn main() -> Result<()> {
     info!(rules = policy.allow_count(), "POLICY.md ACL loaded");
 
     let bind = std::env::var("PIPEFISH_OPERATOR_BIND").unwrap_or_else(|_| DEFAULT_BIND.to_string());
+    let billing = BillingGate::from_env()?;
+    if billing.is_enabled() {
+        info!(
+            url = billing.base_url(),
+            on_error = billing.failure_mode().as_str(),
+            "billing gate enabled (meter recon_scan)"
+        );
+    } else {
+        info!("billing gate disabled");
+    }
 
     let (bus, bus_tx, dx_rx) = BusContext::new();
     let core = CoreContext::new(bus_tx.clone(), policy.clone());
     let llm = LlmContext::new(bus_tx.clone());
     let tool = ToolContext::new(bus_tx.clone(), policy.clone());
-    let dx = DxContext::new(bus_tx.clone(), dx_rx, policy, bind);
+    let dx = DxContext::new(bus_tx.clone(), dx_rx, policy, bind).with_billing(billing);
     let a1 = ReconA1::new(bus_tx.clone());
     let a2 = ReconA2::new(bus_tx.clone());
     let a3 = ReconA3::new(bus_tx.clone());
