@@ -9,15 +9,16 @@ use std::sync::Arc;
 
 use axum::extract::{Query, State};
 use axum::http::{header, HeaderValue, Method, StatusCode};
-use axum::response::Json;
-use axum::routing::get;
-use axum::Router;
+use axum::routing::{get, post};
+use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 use tower_http::cors::CorsLayer;
+use uuid::Uuid;
 
-use crate::events::{BusEvent, ContextId};
+use crate::billing::BillingGate;
+use crate::events::{BusEvent, CommitType, ContextId, ContextScope};
 use crate::mcp::policy::ToolPolicy;
 
 pub const DEFAULT_BIND: &str = "127.0.0.1:8080";
@@ -28,6 +29,8 @@ pub struct OperatorState {
     ring: Arc<Mutex<VecDeque<BusEvent>>>,
     policy: Arc<ToolPolicy>,
     capacity: usize,
+    billing: BillingGate,
+    bus_tx: Option<mpsc::Sender<BusEvent>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -56,13 +59,30 @@ pub struct EventsQuery {
     pub limit: Option<usize>,
 }
 
+#[derive(Debug, Deserialize, Default)]
+pub struct ScanRequest {
+    pub target: Option<String>,
+}
+
 impl OperatorState {
     pub fn new(policy: Arc<ToolPolicy>, capacity: usize) -> Self {
         Self {
             ring: Arc::new(Mutex::new(VecDeque::with_capacity(capacity))),
             policy,
             capacity,
+            billing: BillingGate::disabled(),
+            bus_tx: None,
         }
+    }
+
+    pub fn with_billing(mut self, billing: BillingGate) -> Self {
+        self.billing = billing;
+        self
+    }
+
+    pub fn with_bus(mut self, tx: mpsc::Sender<BusEvent>) -> Self {
+        self.bus_tx = Some(tx);
+        self
     }
 
     pub async fn push(&self, evt: BusEvent) {
@@ -127,7 +147,7 @@ pub fn router(state: OperatorState) -> Router {
             HeaderValue::from_static("http://localhost:3000"),
             HeaderValue::from_static("http://127.0.0.1:3000"),
         ])
-        .allow_methods([Method::GET])
+        .allow_methods([Method::GET, Method::POST])
         .allow_headers([header::CONTENT_TYPE]);
 
     Router::new()
@@ -135,6 +155,7 @@ pub fn router(state: OperatorState) -> Router {
         .route("/api/status", get(status))
         .route("/api/events", get(events))
         .route("/api/policy", get(policy))
+        .route("/api/scans", post(start_scan))
         .layer(cors)
         .with_state(state)
 }
@@ -165,6 +186,65 @@ async fn events(
 
 async fn policy(State(state): State<OperatorState>) -> Json<crate::mcp::policy::PolicyMatrix> {
     Json(state.policy().matrix())
+}
+
+async fn start_scan(
+    State(state): State<OperatorState>,
+    body: Result<Json<ScanRequest>, axum::extract::rejection::JsonRejection>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let req = match body {
+        Ok(Json(req)) => req,
+        Err(_) => ScanRequest::default(),
+    };
+    let scan_id = Uuid::new_v4();
+    match state.billing.accept_scan(scan_id).await {
+        Ok(outcome) => {
+            if let Some(tx) = &state.bus_tx {
+                let description = match req
+                    .target
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                {
+                    Some(target) => format!("recon scan accepted for {target}"),
+                    None => "recon scan accepted".to_string(),
+                };
+                let evt = BusEvent::new(
+                    ContextId::Dx,
+                    CommitType::Feat,
+                    ContextScope::Dx,
+                    description,
+                )
+                .with_payload(serde_json::json!({
+                    "scan_id": scan_id,
+                    "target": req.target,
+                    "billing": outcome.as_str(),
+                }));
+                let _ = tx.try_send(evt);
+            }
+            (
+                StatusCode::ACCEPTED,
+                Json(serde_json::json!({
+                    "accepted": true,
+                    "scan_id": scan_id,
+                    "billing": outcome.as_str(),
+                })),
+            )
+        }
+        Err(err) => {
+            let status = StatusCode::from_u16(err.http_status()).unwrap_or(StatusCode::FORBIDDEN);
+            let message = err.to_string();
+            let code = err.code();
+            (
+                status,
+                Json(serde_json::json!({
+                    "accepted": false,
+                    "error": code,
+                    "message": message,
+                })),
+            )
+        }
+    }
 }
 
 #[cfg(test)]
@@ -260,5 +340,48 @@ mod tests {
             .unwrap()
             .iter()
             .any(|p| p[0] == "recon-a1" && p[1] == "cve-feed"));
+    }
+
+    async fn post_scan(state: OperatorState) -> (StatusCode, serde_json::Value) {
+        let app = router(state);
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/scans")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        (res.status(), json_body(res).await)
+    }
+
+    #[tokio::test]
+    async fn scan_accepted_when_billing_disabled() {
+        let state = OperatorState::new(Arc::new(ToolPolicy::new()), 16);
+        let (status, v) = post_scan(state).await;
+        assert_eq!(status, StatusCode::ACCEPTED);
+        assert_eq!(v["accepted"], true);
+        assert_eq!(v["billing"], "disabled");
+        assert!(v["scan_id"].as_str().is_some());
+    }
+
+    #[tokio::test]
+    async fn scan_unavailable_when_billing_unreachable_fail_closed() {
+        let billing = crate::billing::BillingGate::from_config(crate::billing::BillingConfig {
+            enabled: true,
+            base_url: "http://127.0.0.1:1".into(),
+            api_key: "test-api-key".into(),
+            on_error: crate::billing::FailureMode::FailClosed,
+            timeout: std::time::Duration::from_millis(200),
+        })
+        .unwrap();
+        let state = OperatorState::new(Arc::new(ToolPolicy::new()), 16).with_billing(billing);
+        let (status, v) = post_scan(state).await;
+        assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(v["accepted"], false);
+        assert_eq!(v["error"], "billing_unavailable");
     }
 }

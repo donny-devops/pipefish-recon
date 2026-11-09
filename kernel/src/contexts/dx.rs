@@ -13,6 +13,7 @@ use tokio::sync::{mpsc, Mutex};
 use tokio::time::{interval, Duration};
 use tracing::{info, warn};
 
+use crate::billing::BillingGate;
 use crate::commits::engine::CommitEngine;
 use crate::events::{BusEvent, CommitType, ContextId, ContextScope};
 use crate::mcp::policy::ToolPolicy;
@@ -35,14 +36,20 @@ impl DxContext {
         policy: Arc<ToolPolicy>,
         bind: impl Into<String>,
     ) -> Self {
+        let state = OperatorState::new(policy, RING_CAPACITY).with_bus(bus_tx.clone());
         Self {
             bus_tx,
             bus_rx: Mutex::new(bus_rx),
             audit_path: PathBuf::from("audit_log.jsonl"),
             engine: CommitEngine::new(),
-            state: OperatorState::new(policy, RING_CAPACITY),
+            state,
             bind: bind.into(),
         }
+    }
+
+    pub fn with_billing(mut self, billing: BillingGate) -> Self {
+        self.state = self.state.with_billing(billing);
+        self
     }
 
     pub fn with_audit_path(mut self, path: PathBuf) -> Self {

@@ -87,7 +87,15 @@ GET /health
 GET /api/status
 GET /api/events?limit=50
 GET /api/policy
+POST /api/scans
 ```
+
+Optional SaaS billing is **off unless** `PIPEFISH_BILLING_ENABLED` is set, so
+self-hosted kernels do not call a billing service. When enabled, `POST /api/scans`
+authorizes meter `recon_scan` and records usage. Env vars (blank in
+[`.env.example`](./.env.example)): `BILLING_PUBLIC_URL`, `PIPEFISH_API_KEY`,
+`BILLING_CLIENT_TIMEOUT`, `PIPEFISH_BILLING_ON_ERROR`. Details, the JSON
+contract, and the fail-closed default: [`docs/BILLING.md`](./docs/BILLING.md).
 
 Logging uses `tracing` + `EnvFilter`. Default is `info`:
 

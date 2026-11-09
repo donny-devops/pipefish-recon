@@ -8,6 +8,7 @@
 //! localhost operator HTTP API.
 
 pub mod agents;
+pub mod billing;
 pub mod commits;
 pub mod contexts;
 pub mod crypto;
