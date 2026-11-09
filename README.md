@@ -132,9 +132,10 @@ localhost:3000). Set `NEXT_PUBLIC_KERNEL_URL` to override
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `.github/workflows/ci.yml` | push + pull_request | `cargo fmt --check`, `check`, `test`, `clippy -D warnings` on `kernel/Cargo.toml`; `npm ci` + `npm run build` in `dashboard/`. Permissions: `contents: read`. |
-| `.github/workflows/security-scan.yml` | push to `main`, Monday 06:00 UTC | `cargo generate-lockfile --manifest-path kernel/Cargo.toml`, `cargo check --locked`, then `cargo audit --file Cargo.lock`. |
-| `.github/workflows/release.yml` | tag `v*`, or `workflow_dispatch` | Cross-compile release binaries. Uploads artifacts; does not create a GitHub Release. |
+| `.github/workflows/ci.yml` | push + pull_request | `cargo fmt --check`, `check`, `test`, `clippy -D warnings` on `kernel/Cargo.toml`; `npm ci` + `npm run build` in `dashboard/`. Permissions: `contents: read`. Third-party actions pinned to SHAs. |
+| `.github/workflows/security-scan.yml` | push/PR to `main`, Monday 06:00 UTC | `cargo generate-lockfile`, `cargo check --locked`, `cargo audit`, and `cargo-deny` (`deny.toml`: advisories, licenses, bans, sources). |
+| `.github/workflows/codeql.yml` | push/PR to `main`, Monday schedule | CodeQL for dashboard JavaScript/TypeScript and kernel Rust, with SARIF upload to code scanning. |
+| `.github/workflows/release.yml` | tag `v*`, or `workflow_dispatch` | Cross-compile release binaries (`contents: read`). On `v*` tags only, a separate job (`contents: write`) publishes a GitHub Release from those artifacts. |
 
 `Cargo.lock` is gitignored. Security scan generates a workspace-root lockfile
 in CI before auditing.

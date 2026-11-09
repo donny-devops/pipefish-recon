@@ -2,6 +2,8 @@ name: Security Scan
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   schedule:
     - cron: '0 6 * * 1'
 
@@ -10,11 +12,29 @@ permissions:
 
 jobs:
   audit:
+    name: cargo-audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
       - name: Install cargo-audit
         run: cargo install cargo-audit
       - name: Run audit
         run: cargo generate-lockfile --manifest-path kernel/Cargo.toml && cargo check --manifest-path kernel/Cargo.toml --locked && cargo audit --file Cargo.lock
+
+  deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
+      - name: Generate lockfile
+        run: cargo generate-lockfile --manifest-path kernel/Cargo.toml
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - name: Run cargo-deny
+        run: cargo deny --manifest-path kernel/Cargo.toml --all-features check
