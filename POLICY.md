@@ -11,7 +11,7 @@ agents may and may not do at runtime. The intended kernel behavior: the
 any cross-context dispatch that violates it. Violations are emitted as
 `chore(core): policy denied …` commit events.
 
-### Implementation status (kernel v0.2.0)
+### Implementation status (kernel v0.3.0)
 
 Verified against `kernel/src`:
 
@@ -22,6 +22,9 @@ Verified against `kernel/src`:
   signing-key slot stays `None`.
 - `ToolContext::check_dispatch` consults that ACL. The MCP registry is
   still empty — no live tool servers.
+- RECON-A3 classifies `ThreatSignal` CVSS (+ KEV bump) and **records** the
+  §1 route (`A4 autonomous` / `A4 with policy gate` / `HIL escalation queue`).
+  HIL apply and A4 dry-run execution are v0.5.
 - `POLICY.md.sig` is **not** verified (see [`ROADMAP.md`](./ROADMAP.md) v0.4).
 - Optional `pq-crypto` signatures use `SphincsShake128sSimple`, not the
   SLH-DSA-SHA2-128s parameter set named in the signed-policy note above.
@@ -126,5 +129,5 @@ Changes to this document require:
 The kernel **will refuse to boot** if the on-disk `POLICY.md` signature
 does not verify against the embedded kernel public key.
 
-That refusal is **not implemented** in v0.2.0 (ACL load is; signature
+That refusal is **not implemented** in v0.3.0 (ACL load is; signature
 verify is [`ROADMAP.md`](./ROADMAP.md) v0.4).

@@ -2,8 +2,7 @@
 
 Operator surface for the PipeFish RECON Agentic OS. Next.js 15 App Router
 talks to the kernel operator API (`GET /health`, `/api/status`, `/api/events`,
-`/api/policy`). Private keys never leave the Rust kernel; this UI only reads
-public JSON.
+`/api/policy`, `POST /api/ingest`). Private keys never leave the Rust kernel.
 
 ## Run
 
@@ -24,8 +23,8 @@ npm run dev
 Open `http://localhost:3000`. Override the kernel URL with
 `NEXT_PUBLIC_KERNEL_URL` (default `http://127.0.0.1:8080`).
 
-Pages: `/` status, `/events` bus stream, `/policy` ACL matrix, `/agents` SOUL
-roles plus online flags.
+Pages: `/` status, `/events` bus stream plus webhook ingest form, `/policy`
+ACL matrix, `/agents` SOUL roles plus online flags.
 
 LibOQS WASM signature verification is **not** in this package (see
 [`ROADMAP.md`](../ROADMAP.md) v0.6).

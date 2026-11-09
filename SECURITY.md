@@ -2,12 +2,13 @@
 
 ## Supported Versions
 
-The published crate / binary is `pipefish-recon-kernel` **0.1.x**
-(`kernel/Cargo.toml`). There is no 1.x release. This branch targets **0.2.0**.
+The published crate / binary is `pipefish-recon-kernel` **0.3.x**
+(`kernel/Cargo.toml`). There is no 1.x release.
 
 | Version | Supported |
 | ------- | --------- |
-| 0.2.x (`main`, after merge) | :white_check_mark: |
+| 0.3.x (`main`, after merge) | :white_check_mark: |
+| 0.2.x | :white_check_mark: |
 | 0.1.x | :white_check_mark: |
 | unreleased 1.0.x | not shipped |
 
