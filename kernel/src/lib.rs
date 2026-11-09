@@ -14,3 +14,5 @@ pub mod crypto;
 pub mod events;
 pub mod mcp;
 pub mod operator;
+pub mod routing;
+pub mod signals;

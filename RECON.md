@@ -6,15 +6,16 @@ agents as first-class OS citizens, the way Unix treats processes. Agents
 observe, reason, decide, and act under a constitutional policy boundary that
 is itself cryptographically signed.
 
-## Current kernel (v0.2.0)
+## Current kernel (v0.3.0)
 
 The running binary loads `POLICY.md` §2 as a deny-by-default tool ACL, spawns
-RECON-A1 … A5 as long-running bus citizens, fans every `BusEvent` into
-`audit_log.jsonl`, and serves a localhost operator API plus Next.js dashboard.
+RECON-A1 … A5, fans every `BusEvent` into `audit_log.jsonl`, polls NVD (and
+accepts `POST /api/ingest`), and routes `ThreatSignal`s through RECON-A3's
+deterministic severity classifier.
 
-It does **not** yet ingest CVE feeds, call LLMs, apply nftables rules, or
-verify `POLICY.md.sig` at boot. Those missions stay in this document and
-[`SOUL.md`](./SOUL.md); shipping order is [`ROADMAP.md`](./ROADMAP.md).
+It does **not** yet call LLMs, apply nftables rules, or verify `POLICY.md.sig`
+at boot. Those missions stay in this document and [`SOUL.md`](./SOUL.md);
+shipping order is [`ROADMAP.md`](./ROADMAP.md).
 
 Developer setup: [`README.md`](./README.md).
 

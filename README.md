@@ -4,24 +4,24 @@
 > **Agentic OS kernel**. Five AI agents observing, reasoning, and acting
 > under a constitutional policy loaded from `POLICY.md`.
 
-**v0.2.0** boots five runtime contexts **and** RECON-A1 … A5, enforces a
-deny-by-default tool ACL parsed from `POLICY.md` §2, writes the full bus
-stream to `audit_log.jsonl`, and serves a localhost operator API consumed
-by the Next.js dashboard. Live CVE polling, LLM providers, nftables apply,
-and `POLICY.md.sig` verification are **not** in this release — see
-[`ROADMAP.md`](./ROADMAP.md).
+**v0.3.0** adds a canonical `ThreatSignal`, an NVD CVE 2.0 poller plus
+webhook ingest on RECON-A1, and a deterministic RECON-A3 severity router.
+LLM providers, nftables apply, and `POLICY.md.sig` verification are **not**
+in this release — see [`ROADMAP.md`](./ROADMAP.md).
 
 ## Monorepo layout
 
 ```
 .
-  kernel/            # Rust package pipefish-recon-kernel 0.2.0 (lib + bin)
+  kernel/            # Rust package pipefish-recon-kernel 0.3.0 (lib + bin)
     src/main.rs      # Kernel entrypoint
     src/contexts/    # core, bus, llm, tool, dx
     src/agents/      # RECON-A1 .. A5 (spawned at boot)
+    src/signals.rs   # ThreatSignal + NVD CVE 2.0 parser
+    src/routing.rs   # A3 severity × POLICY §1 routes
     src/crypto/      # ML-KEM-768 + SLH-DSA (feature-gated)
     src/mcp/         # Tool registry + POLICY.md ACL parser
-    src/operator.rs  # Localhost JSON API
+    src/operator.rs  # Localhost JSON API + POST /api/ingest
     src/commits/     # Conventional Commit formatter
     src/events.rs    # BusEvent schema
   dashboard/         # Next.js 15 operator UI
@@ -42,17 +42,18 @@ Shutdown is Ctrl+C on all platforms and SIGTERM on Unix.
 
 ```
 CoreContext  -- healthcheck every 5s; holds loaded ToolPolicy + empty signing-key slot
-BusContext   -- drains the inbox, logs type(scope): description, fans out to dx
+BusContext   -- drains the inbox, logs type(scope): description, fans out to subscribers
 LlmContext   -- idle tick every 30s; no LLM providers
 ToolContext  -- empty MCP registry; check_dispatch uses deny-by-default ACL
 DxContext    -- writes the full bus stream to ./audit_log.jsonl; operator HTTP
-RECON-A1..A5 -- long-running stubs; heartbeat on the bus; no external tools
+RECON-A1     -- NVD poll + POST /api/ingest webhook; 30-day CVE dedupe
+RECON-A3     -- deterministic CVSS/KEV router (HIL decision recorded, not applied)
+RECON-A2/A4/A5 -- long-running stubs
 ```
 
 Contexts and agents talk **only** through `tokio::sync::mpsc::Sender<BusEvent>`.
 `send().await` applies backpressure when the bus is full; events are not
-silently dropped. `BusContext` forwards every event to `DxContext`, so
-`audit_log.jsonl` is the full stream.
+silently dropped. `BusContext` fans every event to `DxContext` and RECON-A3.
 
 Event format (`BusEvent::to_commit_string`):
 
@@ -87,7 +88,12 @@ GET /health
 GET /api/status
 GET /api/events?limit=50
 GET /api/policy
+POST /api/ingest   { "cve_id", "cvss?", "summary?" }
 ```
+
+NVD poller (RECON-A1): `PIPEFISH_NVD_POLL` (default `1`; set `0` to disable),
+`PIPEFISH_NVD_URL`, `PIPEFISH_NVD_INTERVAL_SECS` (default 900). Failed polls
+are logged and the kernel stays up.
 
 Logging uses `tracing` + `EnvFilter`. Default is `info`:
 
@@ -147,7 +153,8 @@ in CI before auditing.
 | Boot fails reading POLICY.md | Run from repo root or set `PIPEFISH_POLICY_PATH`. |
 | A1 cannot use nftables | Expected: deny-by-default ACL from §2. |
 | `pq-crypto` build fails | libOQS missing. Default (no feature) is the supported CI path. |
-| Kernel runs but no CVE polling | Agents are spawned but still stubs. See `ROADMAP.md` v0.3. |
+| Kernel runs but no CVE polling | Default poller is on (`PIPEFISH_NVD_POLL=1`). Check `PIPEFISH_NVD_URL` / network. Use `POST /api/ingest` or the dashboard Events form for a local signal. |
+| Duplicate CVE ignored | A1 de-duplicates the same `cve_id` for 30 days. |
 | POLICY.md.sig not checked | Signature boot gate is v0.4. |
 | Dashboard cannot reach kernel | Start the kernel first; browser must hit localhost:3000 for CORS. |
 | Release job cannot find the binary | Path is `target/<triple>/release/pipefish-recon-kernel` at the workspace root. |

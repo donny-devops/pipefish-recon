@@ -31,3 +31,18 @@ export function fetchRecentEvents(): Promise<BusEvent[]> {
 export function fetchPolicy(): Promise<PolicyMatrix> {
   return getJson("/api/policy");
 }
+
+export async function ingestSignal(body: {
+  cve_id: string;
+  cvss?: number;
+  summary?: string;
+}): Promise<void> {
+  const res = await fetch(`${KERNEL_URL}/api/ingest`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`ingest failed: ${res.status} ${res.statusText}`);
+  }
+}

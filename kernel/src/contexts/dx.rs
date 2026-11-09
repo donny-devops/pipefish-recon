@@ -17,6 +17,7 @@ use crate::commits::engine::CommitEngine;
 use crate::events::{BusEvent, CommitType, ContextId, ContextScope};
 use crate::mcp::policy::ToolPolicy;
 use crate::operator::{self, OperatorState, DEFAULT_BIND, RING_CAPACITY};
+use crate::signals::IngestRequest;
 
 pub struct DxContext {
     bus_tx: mpsc::Sender<BusEvent>,
@@ -34,13 +35,14 @@ impl DxContext {
         bus_rx: mpsc::Receiver<BusEvent>,
         policy: Arc<ToolPolicy>,
         bind: impl Into<String>,
+        ingest_tx: mpsc::Sender<IngestRequest>,
     ) -> Self {
         Self {
             bus_tx,
             bus_rx: Mutex::new(bus_rx),
             audit_path: PathBuf::from("audit_log.jsonl"),
             engine: CommitEngine::new(),
-            state: OperatorState::new(policy, RING_CAPACITY),
+            state: OperatorState::new(policy, RING_CAPACITY).with_ingest(ingest_tx),
             bind: bind.into(),
         }
     }
@@ -139,10 +141,12 @@ mod tests {
             std::env::temp_dir().join(format!("pipefish-audit-{}.jsonl", uuid::Uuid::new_v4()));
         let _ = std::fs::remove_file(&path);
 
-        let (bus, tx, dx_rx) = BusContext::new();
+        let (bus, tx) = BusContext::new();
+        let dx_rx = bus.subscribe();
         let policy = Arc::new(ToolPolicy::new());
-        let dx =
-            DxContext::new(tx.clone(), dx_rx, policy, "127.0.0.1:0").with_audit_path(path.clone());
+        let (ingest_tx, _ingest_rx) = mpsc::channel(4);
+        let dx = DxContext::new(tx.clone(), dx_rx, policy, "127.0.0.1:0", ingest_tx)
+            .with_audit_path(path.clone());
 
         let bus_handle = tokio::spawn(async move { bus.run().await });
         let dx_handle = tokio::spawn(async move { dx.audit_loop().await });

@@ -11,10 +11,11 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use tokio::signal;
+use tokio::sync::mpsc;
 use tracing::{info, warn};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-use pipefish_recon_kernel::agents::recon_a1::ReconA1;
+use pipefish_recon_kernel::agents::recon_a1::{NvdPoller, ReconA1};
 use pipefish_recon_kernel::agents::recon_a2::ReconA2;
 use pipefish_recon_kernel::agents::recon_a3::ReconA3;
 use pipefish_recon_kernel::agents::recon_a4::ReconA4;
@@ -37,7 +38,7 @@ fn init_tracing() {
 async fn main() -> Result<()> {
     init_tracing();
 
-    println!("PipeFish RECON Agentic OS v0.2.0 — kernel online");
+    println!("PipeFish RECON Agentic OS v0.3.0 — kernel online");
     info!("kernel boot sequence initiated");
 
     let policy = Arc::new(ToolPolicy::load()?);
@@ -45,14 +46,18 @@ async fn main() -> Result<()> {
 
     let bind = std::env::var("PIPEFISH_OPERATOR_BIND").unwrap_or_else(|_| DEFAULT_BIND.to_string());
 
-    let (bus, bus_tx, dx_rx) = BusContext::new();
+    let (ingest_tx, ingest_rx) = mpsc::channel(256);
+    let (bus, bus_tx) = BusContext::new();
+    let dx_rx = bus.subscribe();
+    let a3_rx = bus.subscribe();
+
     let core = CoreContext::new(bus_tx.clone(), policy.clone());
     let llm = LlmContext::new(bus_tx.clone());
     let tool = ToolContext::new(bus_tx.clone(), policy.clone());
-    let dx = DxContext::new(bus_tx.clone(), dx_rx, policy, bind);
-    let a1 = ReconA1::new(bus_tx.clone());
+    let dx = DxContext::new(bus_tx.clone(), dx_rx, policy, bind, ingest_tx);
+    let a1 = ReconA1::new(bus_tx.clone(), ingest_rx, NvdPoller::from_env());
     let a2 = ReconA2::new(bus_tx.clone());
-    let a3 = ReconA3::new(bus_tx.clone());
+    let a3 = ReconA3::new(bus_tx.clone(), a3_rx);
     let a4 = ReconA4::new(bus_tx.clone());
     let a5 = ReconA5::new(bus_tx);
 

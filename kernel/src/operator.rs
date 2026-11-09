@@ -9,16 +9,16 @@ use std::sync::Arc;
 
 use axum::extract::{Query, State};
 use axum::http::{header, HeaderValue, Method, StatusCode};
-use axum::response::Json;
-use axum::routing::get;
-use axum::Router;
+use axum::routing::{get, post};
+use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 use tower_http::cors::CorsLayer;
 
 use crate::events::{BusEvent, ContextId};
 use crate::mcp::policy::ToolPolicy;
+use crate::signals::IngestRequest;
 
 pub const DEFAULT_BIND: &str = "127.0.0.1:8080";
 pub const RING_CAPACITY: usize = 256;
@@ -28,6 +28,7 @@ pub struct OperatorState {
     ring: Arc<Mutex<VecDeque<BusEvent>>>,
     policy: Arc<ToolPolicy>,
     capacity: usize,
+    ingest: Option<mpsc::Sender<IngestRequest>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -62,7 +63,13 @@ impl OperatorState {
             ring: Arc::new(Mutex::new(VecDeque::with_capacity(capacity))),
             policy,
             capacity,
+            ingest: None,
         }
+    }
+
+    pub fn with_ingest(mut self, tx: mpsc::Sender<IngestRequest>) -> Self {
+        self.ingest = Some(tx);
+        self
     }
 
     pub async fn push(&self, evt: BusEvent) {
@@ -127,7 +134,7 @@ pub fn router(state: OperatorState) -> Router {
             HeaderValue::from_static("http://localhost:3000"),
             HeaderValue::from_static("http://127.0.0.1:3000"),
         ])
-        .allow_methods([Method::GET])
+        .allow_methods([Method::GET, Method::POST])
         .allow_headers([header::CONTENT_TYPE]);
 
     Router::new()
@@ -135,6 +142,7 @@ pub fn router(state: OperatorState) -> Router {
         .route("/api/status", get(status))
         .route("/api/events", get(events))
         .route("/api/policy", get(policy))
+        .route("/api/ingest", post(ingest))
         .layer(cors)
         .with_state(state)
 }
@@ -165,6 +173,34 @@ async fn events(
 
 async fn policy(State(state): State<OperatorState>) -> Json<crate::mcp::policy::PolicyMatrix> {
     Json(state.policy().matrix())
+}
+
+async fn ingest(
+    State(state): State<OperatorState>,
+    Json(req): Json<IngestRequest>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    if req.cve_id.trim().is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "cve_id required"})),
+        );
+    }
+    let Some(tx) = state.ingest.clone() else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "ingest not configured"})),
+        );
+    };
+    match tx.try_send(req) {
+        Ok(()) => (
+            StatusCode::ACCEPTED,
+            Json(serde_json::json!({"accepted": true})),
+        ),
+        Err(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "ingest queue full"})),
+        ),
+    }
 }
 
 #[cfg(test)]
@@ -260,5 +296,29 @@ mod tests {
             .unwrap()
             .iter()
             .any(|p| p[0] == "recon-a1" && p[1] == "cve-feed"));
+    }
+
+    #[tokio::test]
+    async fn ingest_accepts_webhook() {
+        let (tx, mut rx) = mpsc::channel(4);
+        let state = OperatorState::new(Arc::new(ToolPolicy::new()), 8).with_ingest(tx);
+        let app = router(state);
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/ingest")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"cve_id":"CVE-2026-1337","cvss":9.8,"summary":"rce"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::ACCEPTED);
+        let got = rx.recv().await.expect("queued");
+        assert_eq!(got.cve_id, "CVE-2026-1337");
+        assert_eq!(got.cvss, Some(9.8));
     }
 }
