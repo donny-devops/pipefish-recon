@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use tokio::signal;
 use tracing::{info, warn};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
@@ -40,10 +40,13 @@ async fn main() -> Result<()> {
     println!("PipeFish RECON Agentic OS v0.2.0 — kernel online");
     info!("kernel boot sequence initiated");
 
-    let policy = Arc::new(ToolPolicy::load()?);
+    let policy = Arc::new(
+        ToolPolicy::load().context("failed to load deny-by-default POLICY.md ACL at boot")?,
+    );
     info!(rules = policy.allow_count(), "POLICY.md ACL loaded");
 
     let bind = std::env::var("PIPEFISH_OPERATOR_BIND").unwrap_or_else(|_| DEFAULT_BIND.to_string());
+    info!(bind = %bind, "operator API bind address");
 
     let (bus, bus_tx, dx_rx) = BusContext::new();
     let core = CoreContext::new(bus_tx.clone(), policy.clone());
