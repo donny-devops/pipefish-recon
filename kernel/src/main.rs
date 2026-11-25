@@ -7,6 +7,7 @@
 //! loads `POLICY.md` as the deny-by-default tool ACL, and handles graceful
 //! shutdown on SIGTERM / Ctrl+C.
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
@@ -33,6 +34,14 @@ fn init_tracing() {
         .init();
 }
 
+fn operator_bind() -> Result<String> {
+    let raw = std::env::var("PIPEFISH_OPERATOR_BIND").unwrap_or_else(|_| DEFAULT_BIND.to_string());
+    let addr: SocketAddr = raw.trim().parse().with_context(|| {
+        format!("PIPEFISH_OPERATOR_BIND must be a host:port socket address, got {raw:?}")
+    })?;
+    Ok(addr.to_string())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     init_tracing();
@@ -45,7 +54,7 @@ async fn main() -> Result<()> {
     );
     info!(rules = policy.allow_count(), "POLICY.md ACL loaded");
 
-    let bind = std::env::var("PIPEFISH_OPERATOR_BIND").unwrap_or_else(|_| DEFAULT_BIND.to_string());
+    let bind = operator_bind()?;
     info!(bind = %bind, "operator API bind address");
 
     let (bus, bus_tx, dx_rx) = BusContext::new();
