@@ -12,5 +12,6 @@ pub mod commits;
 pub mod contexts;
 pub mod crypto;
 pub mod events;
+pub mod feedback;
 pub mod mcp;
 pub mod operator;
